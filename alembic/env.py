@@ -2,10 +2,10 @@ import os
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, pool
-from alembic import context
 
-from app.db import Base  # uses DATABASE_URL
+from alembic import context
 from app import models  # ensure models are imported so Base has tables  # noqa: F401
+from app.db import Base  # uses DATABASE_URL
 
 config = context.config
 

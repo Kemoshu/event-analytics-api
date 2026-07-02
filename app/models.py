@@ -1,11 +1,13 @@
-from sqlalchemy import Column, DateTime, Integer, String, JSON, Index
+from sqlalchemy import JSON, Column, DateTime, Index, Integer, String
 from sqlalchemy.sql import func
+
 from .db import Base
+
 
 class Event(Base):
     __tablename__ = "events"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True)
     event_type = Column(String(80), index=True, nullable=False)
     source = Column(String(120), index=True, nullable=False)
     user_id = Column(String(120), index=True, nullable=True)

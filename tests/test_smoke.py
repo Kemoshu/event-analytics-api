@@ -1,43 +1,10 @@
-import os
-import pytest
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-
-from app.db import Base, get_db
-from app.main import app
-
-TEST_DB_URL = os.getenv(
-    "TEST_DATABASE_URL",
-    "postgresql+psycopg2://app:app@db_test:5432/events_test"
-)
-
-engine = create_engine(TEST_DB_URL, pool_pre_ping=True)
-TestingSessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=False)
-
-@pytest.fixture(autouse=True)
-def _reset_db():
-    Base.metadata.drop_all(bind=engine)
-    Base.metadata.create_all(bind=engine)
-    yield
-    Base.metadata.drop_all(bind=engine)
-
-def override_get_db():
-    db = TestingSessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-app.dependency_overrides[get_db] = override_get_db
-client = TestClient(app)
-
-def test_health():
+def test_health(client):
     r = client.get("/health")
     assert r.status_code == 200
     assert r.json()["ok"] is True
 
-def test_create_and_list_event():
+
+def test_create_and_list_event(client):
     payload = {
         "event_type": "robot.menu.updated",
         "source": "admin-panel",
@@ -56,10 +23,13 @@ def test_create_and_list_event():
     assert len(items) == 1
     assert items[0]["id"] == created["id"]
 
-def test_counts():
-    client.post("/events", json={"event_type":"a","source":"s","user_id":None,"payload":{"x":1}})
-    client.post("/events", json={"event_type":"a","source":"s","user_id":None,"payload":{"x":2}})
-    client.post("/events", json={"event_type":"b","source":"s","user_id":None,"payload":{"x":3}})
+
+def test_counts(client):
+    for event_type, x in (("a", 1), ("a", 2), ("b", 3)):
+        client.post(
+            "/events",
+            json={"event_type": event_type, "source": "s", "user_id": None, "payload": {"x": x}},
+        )
 
     r = client.get("/analytics/counts?group_by=event_type")
     assert r.status_code == 200

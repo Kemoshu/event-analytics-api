@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:16
+    image: postgres:16.8-alpine
     environment:
       POSTGRES_USER: app
       POSTGRES_PASSWORD: app
@@ -9,19 +9,41 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d events"]
+      interval: 2s
+      timeout: 3s
+      retries: 20
 
-  api:
-    build: .
+  migrate:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: ["alembic", "upgrade", "head"]
     environment:
       DATABASE_URL: postgresql+psycopg2://app:app@db:5432/events
-      PYTHONPATH: /app
+    depends_on:
+      db:
+        condition: service_healthy
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    environment:
+      DATABASE_URL: postgresql+psycopg2://app:app@db:5432/events
+      LOG_LEVEL: INFO
     ports:
       - "8000:8000"
     depends_on:
-      - db
-  
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+
   db_test:
-    image: postgres:16
+    image: postgres:16.8-alpine
+    profiles: ["test"]
     environment:
       POSTGRES_USER: app
       POSTGRES_PASSWORD: app
@@ -33,6 +55,20 @@ services:
       interval: 2s
       timeout: 3s
       retries: 20
+
+  test:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      target: test
+    profiles: ["test"]
+    environment:
+      TEST_DATABASE_URL: postgresql+psycopg2://app:app@db_test:5432/events_test
+      DATABASE_URL: postgresql+psycopg2://app:app@db_test:5432/events_test
+    depends_on:
+      db_test:
+        condition: service_healthy
+    command: ["pytest", "-q"]
 
 volumes:
   pgdata:

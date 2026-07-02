@@ -1,7 +1,8 @@
 from typing import Optional
+
 from fastapi import APIRouter, Depends, Query
+from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
-from sqlalchemy import select, desc
 
 from ..db import get_db
 from ..models import Event

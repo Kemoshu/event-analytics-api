@@ -13,6 +13,15 @@ pgdata/
 .vscode/
 
 pytest_cache/
+.pytest_cache/
 .mypy_cache/
+.ruff_cache/
+
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+.terraform.lock.hcl
 
 alembic/versions/__pycache__/
