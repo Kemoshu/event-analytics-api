@@ -1,0 +1,90 @@
+replicaCount: 2
+
+image:
+  repository: ""  # e.g. <account>.dkr.ecr.us-east-1.amazonaws.com/event-analytics-api
+  tag: ""         # set per release, e.g. v1.2.3; falls back to Chart appVersion
+  pullPolicy: IfNotPresent
+
+# The chart never creates the database secret. Create it out of band, e.g.:
+#   kubectl create secret generic event-analytics-db --from-literal=DATABASE_URL=...
+# or manage it with External Secrets Operator against AWS Secrets Manager.
+database:
+  existingSecret: event-analytics-db
+  secretKey: DATABASE_URL
+
+config:
+  logLevel: INFO
+  dbPoolSize: "5"
+  dbMaxOverflow: "10"
+
+# Extra plain env vars merged into the container environment.
+extraEnv: []
+#  - name: FEATURE_FLAG
+#    value: "off"
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8000
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/path: /metrics
+  prometheus.io/port: "8000"
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  runAsGroup: 1001
+  fsGroup: 1001
+  seccompProfile:
+    type: RuntimeDefault
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 2
+  maxReplicas: 6
+  targetCPUUtilizationPercentage: 70
+
+probes:
+  liveness:
+    path: /health/live
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+  readiness:
+    path: /health/ready
+    initialDelaySeconds: 5
+    periodSeconds: 10
+    timeoutSeconds: 3
+    failureThreshold: 3
+
+# Alembic migration Job run as a pre-install/pre-upgrade hook.
+migrations:
+  enabled: true
+  backoffLimit: 2
+  activeDeadlineSeconds: 300
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
