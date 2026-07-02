@@ -1,0 +1,9 @@
+# Copy to terraform.tfvars (gitignored) and adjust.
+aws_region        = "us-east-1"
+environment       = "demo"
+github_repository = "YOUR_GITHUB_USER/event-analytics-api"
+
+# Cost levers, defaults shown:
+# node_instance_types = ["t3.medium"]
+# node_desired_size   = 2
+# db_instance_class   = "db.t4g.micro"

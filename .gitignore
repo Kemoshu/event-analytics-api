@@ -22,6 +22,6 @@ pytest_cache/
 *.tfstate.*
 *.tfvars
 !*.tfvars.example
-.terraform.lock.hcl
+backend.hcl
 
 alembic/versions/__pycache__/
