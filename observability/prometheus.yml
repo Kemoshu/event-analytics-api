@@ -1,0 +1,12 @@
+# Local Prometheus config for the docker-compose observability profile.
+# On EKS this job is replaced by kube-prometheus-stack discovering pods via
+# the prometheus.io/* annotations set in the Helm chart.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: event-analytics-api
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["api:8000"]
